@@ -13,6 +13,9 @@
 		6C526ABF269AB6A1004DF3DE /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6C526ABD269AB6A1004DF3DE /* Main.storyboard */; };
 		6C526AC1269AB6A4004DF3DE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6C526AC0269AB6A4004DF3DE /* Assets.xcassets */; };
 		6C526AC4269AB6A4004DF3DE /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6C526AC2269AB6A4004DF3DE /* LaunchScreen.storyboard */; };
+		6C5BBC6726F2F5D7009A16C3 /* car.png in Resources */ = {isa = PBXBuildFile; fileRef = 6C5BBC6626F2F5D7009A16C3 /* car.png */; };
+		6C646607270ACEAA007E0D25 /* ShareActivityViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C646606270ACEAA007E0D25 /* ShareActivityViewController.swift */; };
+		6C69624E26F8720400CE9285 /* NewSideMenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C69624D26F8720400CE9285 /* NewSideMenuViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +27,9 @@
 		6C526AC0269AB6A4004DF3DE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		6C526AC3269AB6A4004DF3DE /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		6C526AC5269AB6A4004DF3DE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6C5BBC6626F2F5D7009A16C3 /* car.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = car.png; sourceTree = "<group>"; };
+		6C646606270ACEAA007E0D25 /* ShareActivityViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareActivityViewController.swift; sourceTree = "<group>"; };
+		6C69624D26F8720400CE9285 /* NewSideMenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewSideMenuViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,12 +65,23 @@
 				6C526AB7269AB6A1004DF3DE /* AppDelegate.swift */,
 				6C526AB9269AB6A1004DF3DE /* SceneDelegate.swift */,
 				6C526ABB269AB6A1004DF3DE /* ViewController.swift */,
+				6C646606270ACEAA007E0D25 /* ShareActivityViewController.swift */,
 				6C526ABD269AB6A1004DF3DE /* Main.storyboard */,
+				6C69624D26F8720400CE9285 /* NewSideMenuViewController.swift */,
 				6C526AC0269AB6A4004DF3DE /* Assets.xcassets */,
+				6C5BBC6526F2F5A0009A16C3 /* TraceImages */,
 				6C526AC2269AB6A4004DF3DE /* LaunchScreen.storyboard */,
 				6C526AC5269AB6A4004DF3DE /* Info.plist */,
 			);
 			path = "DrawingApp V.1";
+			sourceTree = "<group>";
+		};
+		6C5BBC6526F2F5A0009A16C3 /* TraceImages */ = {
+			isa = PBXGroup;
+			children = (
+				6C5BBC6626F2F5D7009A16C3 /* car.png */,
+			);
+			path = TraceImages;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -124,6 +141,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6C5BBC6726F2F5D7009A16C3 /* car.png in Resources */,
 				6C526AC4269AB6A4004DF3DE /* LaunchScreen.storyboard in Resources */,
 				6C526AC1269AB6A4004DF3DE /* Assets.xcassets in Resources */,
 				6C526ABF269AB6A1004DF3DE /* Main.storyboard in Resources */,
@@ -137,6 +155,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6C69624E26F8720400CE9285 /* NewSideMenuViewController.swift in Sources */,
+				6C646607270ACEAA007E0D25 /* ShareActivityViewController.swift in Sources */,
 				6C526ABC269AB6A1004DF3DE /* ViewController.swift in Sources */,
 				6C526AB8269AB6A1004DF3DE /* AppDelegate.swift in Sources */,
 				6C526ABA269AB6A1004DF3DE /* SceneDelegate.swift in Sources */,
@@ -296,7 +316,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.Exp.DrawingApp-V-1";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 2;
 			};
 			name = Debug;
 		};
@@ -315,7 +335,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.Exp.DrawingApp-V-1";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 2;
 			};
 			name = Release;
 		};

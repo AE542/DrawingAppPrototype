@@ -13,10 +13,20 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
-        // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
-        // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
-        guard let _ = (scene as? UIWindowScene) else { return }
+        //guard let scene = (scene as? UIWindowScene) else { return }
+//        //changed from no name _ to window scene so it can be used in the guard let
+//
+//        let window = UIWindow(windowScene: scene)
+//        window.rootViewController = ViewController()
+//        window.makeKeyAndVisible()
+//        self.window = window
+//        this shows the window but its coming up as a complete mess off screen and won't load correctly 
+        //ok now the navigation bar is showing up in the app. //however is causing problems with views.
+        
+//        let window = UIWindow(windowScene: windowScene)
+//        window.rootViewController = ViewController() //set the rootVC as the mainVC.
+//        window.makeKeyAndVisible()
+        
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
