@@ -16,6 +16,35 @@ class NewSideMenuViewController: UIViewController {
     
    let mainVC = ViewController()
     
+    //create an enum that handles state changes to go to different vcs.
+    
+    enum SideMenuOptions: String, CaseIterable {
+        //Types that conform to the CaseIterable protocol are typically enumerations without associated values. When using a CaseIterable type, you can access a collection of all of the type’s cases by using the type’s allCases property.
+        
+        case Home = "Home"
+        case Load = "Load Previous Drawings"
+        case Instructions = "Instructions"
+        case About = "About"
+        case Close = "Close"
+        
+        var imageName: String {
+            switch self {// self because we're calling this vc.
+            case .Home: //set case then set image name
+               return "house" //String literal is unused = no return declared
+            case .Load:
+                return "rectangle.on.rectangle"
+            case .Instructions:
+                return ""
+            case .About:
+                return ""
+            case .Close:
+                return ""
+            
+            }
+        }
+        
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .blue

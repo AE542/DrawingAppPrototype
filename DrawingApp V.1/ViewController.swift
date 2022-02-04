@@ -19,7 +19,7 @@
 
 //2021/10/06 Adding share functionality...app is still breaking and freezing when the button is pressed...will need to present the popoverpresentation controller as a bar button item
 //2021/10/07 Share popOverPresentation controller was the correct way to get this showing. Is now working in the app! Will need to add some more functionality to it.
-//2021/10/10 Ok, can now save images but drawings not being saved with images...may need to make a custom method to save the PKDrawing over the orignal image.
+//2021/10/10 Ok, can now save images but drawings not being saved with images...may need to make a custom method to save the PKDrawing over the original image.
 
 import UIKit
 import PencilKit
@@ -51,11 +51,15 @@ class ViewController: UIViewController, PKToolPickerObserver, PKCanvasViewDelega
         case cat = "cat" //don't add parens for enum
         case hero = "hero"
         case shinkansen = "bulletTrain"
+        case earthMoonAndSun = "earthMoonAndSun"
+        case mountains = "mountains"
+        case normalTrain = "normalTrain"
+        case empty = ""
       
         var imageName: String {
             switch self {
             case.airplane:
-                return "airplane.png"
+                return "Airplane.png"
             case.car:
                 return "car.png"
             case.cat:
@@ -64,6 +68,14 @@ class ViewController: UIViewController, PKToolPickerObserver, PKCanvasViewDelega
                 return "hero.png"
             case.shinkansen:
                 return "shinkansen.png"
+            case .earthMoonAndSun:
+                return "moonearthandsun.png"
+            case .mountains:
+                return "mountains.png"
+            case .normalTrain:
+                return "normalTrain.png"
+            case .empty:
+                return ""
             }
         }
         
@@ -72,12 +84,15 @@ class ViewController: UIViewController, PKToolPickerObserver, PKCanvasViewDelega
     weak var delegate: MainViewControllerDelegate? //weak so we don't cause a memory leak
     //'weak' must not be applied to non-class-bound 'MainViewControllerDelegate'; consider adding a protocol conformance that has a class bound. = this means that we have to make the delegate conform to any object so we can use it.
     
+    let dataModelController = DataModelController()
+    
     let canvasView = PKCanvasView()
     let toolPicker = PKToolPicker.init() //crucial! Allows us to create individual instances of the toolPicker.
     var currentDrawing = String()
     
    // let newCanvasView = PKCanvasView()
    // let views = Views()
+    var buttonChangeCounter = 1
     
     var pkDrawing = PKDrawing() //create a blank drawing we can call upon when we want to save or add a new drawing.
     var newPKDrawing = PKDrawing()
@@ -97,37 +112,50 @@ class ViewController: UIViewController, PKToolPickerObserver, PKCanvasViewDelega
     
     let share = UIImage(systemName:"square.and.arrow.up")
     
+    let handDrawing = UIImage(systemName: "hand.draw")
     
+    var hasModifiedDrawing = false
+    
+    var drawingIndex: Int = 0
+    
+    
+    var totalImages = [drawing.hero.rawValue, drawing.shinkansen.rawValue, drawing.airplane.rawValue, drawing.cat.rawValue]
+//    let viewWidth = view.bounds.width
+//    let viewHeight = view.bounds.height
+    
+    var removeIsPressed = false // to change the button text
+    
+    //remember just replace the title with image and you can use a UIImage instead of a text title
+    let save = UIBarButtonItem(title: "Save Drawing", style: .plain, target: self, action: #selector(saveCurrentDrawing))
+    let optionsMenu = UIBarButtonItem(title:"Options", style: .done, target: self, action: #selector(showSideMenu))
+    let changePicture = UIBarButtonItem(title: "Change", style: .plain, target: self, action: #selector(changeDrawing(_:)))
+    
+    var removePicture = UIBarButtonItem(title: "Remove Background Image", style: .plain, target: self, action: #selector(removeBackgroundImage))
+    
+   // var change = UIBarButtonItemGroup(barButtonItems: [removePicture], representativeItem: <#T##UIBarButtonItem?#>)
+    
+//    let addBackgroundBack = UIBarButtonItem(title: "Add Background", style: .plain, target: self, action: #selector(removeBackgroundImage))
+//    
     override func viewDidLoad() {
         super.viewDidLoad()
         
         //let fingerDrawing = canvasView.drawingPolicy = .anyInput
         
-        let fingerDraw = UIBarButtonItem(title: "Finger Draw", style: .plain, target: self, action: #selector(drawUsingFinger))
+        let fingerDraw = UIBarButtonItem(image: handDrawing, style: .plain, target: self, action: #selector(drawUsingFinger))
         //change with SF Symbols at later date.
         let delete = UIBarButtonItem(title: "Delete", style: .plain, target: self, action: #selector(clearCanvas))
         let share = UIBarButtonItem(image:share, style: .plain, target: self, action: #selector(shareImage))
-        //remember just replace the title with image and you can use a UIImage instead of a text title
-        let save = UIBarButtonItem(title: "Save Drawing", style: .plain, target: self, action: #selector(saveCurrentDrawing))
-        let optionsMenu = UIBarButtonItem(title:"Options", style: .done, target: self, action: #selector(showSideMenu))
-        let changePicture = UIBarButtonItem(title: "Change", style: .plain, target: self, action: #selector(changeDrawing(_:)))
-        
+//        //remember just replace the title with image and you can use a UIImage instead of a text title
+
         navigationItem.leftBarButtonItems = [optionsMenu, share, fingerDraw, changePicture]
-        navigationItem.rightBarButtonItems = [save, delete]
+        navigationItem.rightBarButtonItems = [save, delete, removePicture]
         //need to add save button and data model for saving picture progress.
       //  navigationController?.title = car
         
-        canvasView.delegate = self
-        canvasView.drawing = pkDrawing
-       //canvasView.alwaysBounceVertical = true //this was calling the screen to bounce on the iPad.
-        //canvasView.backgroundColor = .blue
-        
-//                if #available(iOS 13.0, *) { //need to check if its available for certain devices.
-//                    toolPicker = PKToolPicker() //remember to put the var as a global var
-//                } else {
-                   // if let window = parent?.view.window {
-                    
-                    //toolPicker = PKToolPicker.shared(for: window)!
+        canvasView.delegate = self //The object you use to respond to changes in the drawn content or with the selected tool.
+        dataModelController.dataModel.drawings.append(pkDrawing)
+        canvasView.drawing = dataModelController.dataModel.drawings[drawingIndex]
+
                     toolPicker.setVisible(true, forFirstResponder: canvasView)
                     toolPicker.addObserver(canvasView)
                     toolPicker.addObserver(self)
@@ -140,123 +168,67 @@ class ViewController: UIViewController, PKToolPickerObserver, PKCanvasViewDelega
 //        canvasView.minimumZoomScale = 1
         //canvasView.setNeedsDisplay()
         
+        setCurrentImage(image: drawing.mountains.rawValue)
+     
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
         
-        //canvasView.addTraceImageToCanvasView(imageName: drawing.hero.rawValue, contentMode: .scaleAspectFit)
-               //}
-               // }
+        dataModelController.dataModel.drawings.append(pkDrawing)
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        
+        if hasModifiedDrawing == true {
+            dataModelController.dataModel.drawings.append(pkDrawing)
+            dataModelController.updateDrawing(canvasView.drawing, at: drawingIndex)
+        }
+    }
+    
+    
+    func setCurrentImage(image: String){
         
         let viewWidth = view.bounds.width
         let viewHeight = view.bounds.height
         canvasView.frame = CGRect(x: 0, y: 0, width: viewWidth, height: viewHeight)
-        
-        let heroImageName = drawing.hero.rawValue
-        let imageToAdd = UIImage(named: heroImageName)
+        //let heroImageName = drawing.hero.rawValue
+        let imageToAdd = UIImage(named: image)
         let newImageView = UIImageView(image: imageToAdd)
         imageView.frame = CGRect(x: 0, y: 0, width: viewWidth, height: viewHeight)
-        
+
         view.addSubview(newImageView)
         newImageView.anchors(top: view.topAnchor, bottom: view.bottomAnchor, trailing: view.trailingAnchor, leading: view.leadingAnchor)
-        
+
         view.addSubview(canvasView) //putting this above the anchors stops the constraint fatal error. this view needs to be added to subview BEFORE anchoring it.
        // view.bringSubviewToFront(canvasView)
                 canvasView.anchors(top: view.topAnchor, bottom: view.bottomAnchor, trailing: view.trailingAnchor, leading: view.leadingAnchor)
         //YES this is working on all simulators and the iPad properly now!!
-//        canvasView.backgroundColor = .clear
-//        canvasView.isOpaque = false //so we can draw over it.
-//        canvasView.maximumZoomScale = 2 //setting the maximum zoom scale to 1 prevents the weird behaviour where the image isn't zooming with the canvas view.
-//        canvasView.minimumZoomScale = 1
-//        //canvasView.setNeedsDisplay()
-//        
-//        
-//        canvasView.addTraceImageToCanvasView(imageName: shinkansen, contentMode: .scaleAspectFit)
-        
-        //.redraw is keeping the image on the screen
-        //self.canvasView.frame = self.setSize()
-        
-        
-        //view.addSubview(canvasView)
-//        let canvas = PKCanvasView(frame: view.bounds)
-//        
-//        view.addSubview(canvas)
-//        canvas.tool = PKInkingTool(.pen, color: .black, width: 35)
-        //simple canvas tool
-        //canvasView.clipsToBounds = true
-        
-//        mainView.backgroundColor = .blue
-//        //view.addSubview(mainView)
-//        mainView.layer.cornerRadius = 10
-////
-//        mainView.clipsToBounds = true// determines whether the subviews are confined to the main UIView here...will need this for the images I'm gonna load later.
-//        mainView.layer.borderWidth = 5
-//        mainView.layer.borderColor = UIColor.lightGray.cgColor
-//
-//        mainView.anchors(top: view.safeAreaLayoutGuide.topAnchor, bottom: view.safeAreaLayoutGuide.bottomAnchor, trailing: view.trailingAnchor, leading: view.leadingAnchor)
-        //view.addSubview(canvas)
-
-//        Unable to activate constraint with anchors <NSLayoutYAxisAnchor:0x600000338ec0 "UIView:0x7fc23ce057f0.top"> and <NSLayoutYAxisAnchor:0x6000003398c0 "UILayoutGuide:0x600002f641c0'UIViewSafeAreaLayoutGuide'.top"> because they have no common ancestor.  Does the constraint or its anchors reference items in different view hierarchies?  That's illegal.' should have added view.addSubView here not in the func below
-       
-       // createUIView(context: canvasView as! CGContext) bad instruction cannot assign canvas view as a CGContext Image.
-        
-       // createUIView()
-        
-//        canvasView.backgroundColor = .clear
-//        canvasView.isOpaque = false //so we can draw over it.
-//        canvasView.maximumZoomScale = 10
-//        canvasView.minimumZoomScale = 1
-        //canvasView.addTraceImageToCanvasView(imageName: car)
-        
-        //let bundle = Bundle(path: "TraceImages")
-//        let fileManager = FileManager.default
-//        let path = Bundle.main.resourcePath!
-//        let items = try! fileManager.contentsOfDirectory(atPath: path)
-        
-       // var filePath = Bundle.main.url(forResource: "car", withExtension: "png")
-        
-//        let height = UIScreen.main.bounds.size.height
-//
-//        let width = UIScreen.main.bounds.size.width
-//        let backgroundDimensions = UIImageView(frame: CGRect(x: 0, y: 0, width: width, height: height))
-//        backgroundDimensions.image(UIImage(named: "car.png"))
-//
-//        backgroundDimensions.contentMode = UIViewContentMode
-//     // let car = UIImageView(image: UIImage(named: "car.png")) //well...its loading the picture but not at the correct ratio
-//
-//
-//     // let imageView = UIImageView(image: UIImage(contentsOfFile: items))
-//        //let imageView1 = UIImageView(image: UIImage(contentsOfFile: filePath))
-//       // let contentView = Tool.getContentViewFromPKCanvasView(canvasView)
-//       canvasView.addSubview(car)
-//       canvasView.sendSubviewToBack(car)
-        
-        //var car = "car.png"
-        //canvasView.addTraceImageToCanvasView(imageName: car)
-        
-     //   self.canvasView.frame = self.setSize()
-      canvasView.becomeFirstResponder()
+ 
     }
     
-//    override func viewDidLayoutSubviews() {
-//        //super.viewDidLayoutSubviews()
-//
-//        //this is one of the ways to keep the canvas view in portrait mdoe
-//
-//        let canvasScale = canvasView.bounds.width / mainViewWidth //we can use this to divide the width of the canvas to reset it
-//   // this value was causing the CALayer position contains NaN: [590 nan] crash because it isn't possible to divide by 0. Reason for issue according to S.O. but still unable to update for rotation.
-//        canvasView.minimumZoomScale = canvasScale
-//        canvasView.maximumZoomScale = canvasScale
-//        canvasView.zoomScale = canvasScale
-//
-//        //call updateView func here
-//
-//        updateContentSize()
-//
-//        canvasView.contentOffset = CGPoint(x: 0, y: -canvasView.adjustedContentInset.top)
-//    }
-    
-//    func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
-//        updateContentSize()
-//    }
-    
+    @objc func removeBackgroundImage(image: UIImage) {
+        //image
+        //imageView.removeFromSuperview()
+        buttonChangeCounter += 1
+        
+        switch buttonChangeCounter {
+        case 1: removePicture.title = "Add Background Image"
+            setCurrentImage(image: drawing.shinkansen.rawValue)
+            
+        case 2: removePicture.title = "Remove Background Image"
+            setCurrentImage(image: (drawing.empty.rawValue))
+        buttonChangeCounter = 0 //reset back when to the original name of the button when case 2 is valid.
+        default:
+            print("Unable to change background text.")
+        }
+       // removePicture.title = "Add Background" //this was a simple way to change the UIBar Button Item,
+        //setCurrentImage(image: drawing.shinkansen.rawValue) //this does change picture but I need it to remove and load the same picture... could create a blank image to compensate for this but thats not necessary. There is another way
+        setCurrentImage(image: drawing.empty.rawValue)
+        
+        viewDidDisappear(true)
+    }
     
     func updateContentSize() {
         let drawing = canvasView.drawing
@@ -287,12 +259,7 @@ class ViewController: UIViewController, PKToolPickerObserver, PKCanvasViewDelega
             return self.getWidth()
         }
     }
-//
-    
-    
-    
-    
-    
+
     func getHeight() -> CGRect {
         currentImage = UIImage(named: "hero.png")
         let containerView = self.imageView
@@ -319,123 +286,6 @@ class ViewController: UIViewController, PKToolPickerObserver, PKCanvasViewDelega
         let origin = CGPoint.init(x: xPosition, y: yPosition)
         return CGRect.init(origin: origin, size: size)
     }
-//    override func viewDidAppear(_ animated: Bool) {
-//        //setUpCanvas() //func should have been in viewdidappear
-//        let canvas = PKCanvasView(frame: self.view.bounds)
-//        canvasView.delegate = self
-//        if #available(iOS 13.0, *) { //need to check if its available for certain devices.
-//            toolPicker = PKToolPicker() //remember to put the var as a global var
-//        } else {
-//            //this part is a little confusing but we have to set the toolpicker, using the window of the parent view as its not been added directly to the window
-//           let window = parent?.view.window //set the window to be the parent view
-//            toolPicker = PKToolPicker.shared(for: window!)! //unwrapped but toolpicker should be available so won't cause an issue.
-//            //PKToolPicker is used because we want to return the pktoolpicker into the parent view window
-//    }
-//        toolPicker.setVisible(true, forFirstResponder: canvas) //set the first responder to be th canvas view so it can be accessed immediately when touched
-//        toolPicker.addObserver(canvas)//we then add an observer to make sure it notifies of changes when there are changes to the canvas view.
-//        toolPicker.addObserver(self) //VC must conform to PKToolPicker observer so we need to add protocol inheritance
-//        //updateLayout(for: toolPicker) //this method is going to change the view to accomodate for splitting the screen
-//        canvasView.becomeFirstResponder() //Asks UIKit to make this object the first responder in its window. When touched it becomes the first responder.
-//
-//
-//    }
-
-//    func configureMainView() {
-//        canvasView.clipsToBounds = true
-//             //mainView.layer.cornerRadius = 20
-//        //canvasView.clipsToBounds = false
-//
-//    }
-    
-   // func setUpCanvas() {
-      //  let canvas = PKCanvasView(frame: self.view.bounds) //should be self because its this vc.
-       // var toolPicker = PKToolPicker() //create as an unwrapped optional
-       // canvasView.delegate = self
-        //guard let window = view.window else { return }
-        //Value of optional type 'UIWindow?' must be unwrapped to a value of type 'UIWindow' should be guard let unwrapped
-        
-        //var drawingPolicy = PKCanvasViewDrawingPolicy(rawValue: 1)
-      //  view.addSubview(canvas)
-        
-        // let toolPicker = PKToolPicker.shared(for: window) else { return } //create general tool picker. This is deprecated, will need to create individual instance.
-       // canvas.tool = PKInkingTool(.pen, color: .black, width: 25)
-        //works for ink but doesn't work the right way I want.
-        
-        //canvas.drawing = PKDrawing()
-    
-        //canvas.tool = PKEraserTool(.vector)
-        //ok this actually works on an actual device not on the simulator. Doesn't register fingers though, so need to add support for that.
-        //toolPicker.isVisible == true
-    //}
-    
-//    override func viewWillAppear(_ animated: Bool) {
-//        //why use viewWillAppear on the view hierarchy? this method notifies the vc that the view is about to be added to the view hierarchy
-//        super.viewWillAppear(animated)
-//        //let canvas = PKCanvasView(frame: self.view.bounds)
-//
-//      let canvas = PKCanvasView()
-//
-//        //canvasView.frame(forAlignmentRect: self.view.bounds)
-//
-//        //canvasView.delegate = self
-//        //canvasView.drawing = PKDrawing()
-//       canvas.delegate = self
-//       canvas.alwaysBounceVertical = true //A Boolean value that determines whether bouncing always occurs when vertical scrolling reaches the end of the content.
-//
-//
-//
-//        //canvas.drawing = PKDrawing()
-//        if #available(iOS 13.0, *) { //need to check if its available for certain devices.
-//            toolPicker = PKToolPicker() //remember to put the var as a global var
-//        } else {
-//            //this part is a little confusing but we have to set the toolpicker, using the window of the parent view as its not been added directly to the window
-//           let window = parent?.view.window //set the window to be the parent view
-//            toolPicker = PKToolPicker.shared(for: window!)! //unwrapped but toolpicker should be available so won't cause an issue.
-//            //PKToolPicker is used because we want to return the pktoolpicker into the parent view window
-//    }
-//        toolPicker.setVisible(true, forFirstResponder: canvas) //set the first responder to be th canvas view so it can be accessed immediately when touched
-//        toolPicker.addObserver(canvas)//we then add an observer to make sure it notifies of changes when there are changes to the canvas view.
-//        toolPicker.addObserver(self) //VC must conform to PKToolPicker observer so we need to add protocol inheritance
-//        //updateLayout(for: toolPicker) //this method is going to change the view to accomodate for splitting the screen
-//        canvas.becomeFirstResponder() //Asks UIKit to make this object the first responder in its window. When touched it becomes the first responder.
-//
-//        view.addSubview(canvas)
-//
-//    }
-    
-//    override func viewWillDisappear(_ animated: Bool) {
-//        super.viewDidDisappear(true)
-//        clearCanvas()
-//    }
-
-    //func configureMainView() {
-//        mainView.clipsToBounds = true
-//             mainView.layer.cornerRadius = 20
-//        //canvasView.clipsToBounds = false
-        
-    //}
-    
-//    func setUpCanvas() {
-//        let canvas = PKCanvasView(frame: self.view.bounds) //should be self because its this vc.
-//       // var toolPicker = PKToolPicker() //create as an unwrapped optional
-//        canvasView.delegate = self
-//        guard let window = view.window else { return }
-//        //Value of optional type 'UIWindow?' must be unwrapped to a value of type 'UIWindow' should be guard let unwrapped
-//
-//        //var drawingPolicy = PKCanvasViewDrawingPolicy(rawValue: 1)
-//        view.addSubview(canvas)
-//
-//        // let toolPicker = PKToolPicker.shared(for: window) else { return } //create general tool picker. This is deprecated, will need to create individual instance.
-//       // canvas.tool = PKInkingTool(.pen, color: .black, width: 25)
-//        //works for ink but doesn't work the right way I want.
-//
-//        //canvas.drawing = PKDrawing()
-//
-//        //canvas.tool = PKEraserTool(.vector)
-//        //ok this actually works on an actual device not on the simulator. Doesn't register fingers though, so need to add support for that.
-//        //toolPicker.isVisible == true
-//
-//}
 
     @objc func clearCanvas() {
         let ac = UIAlertController(title: "Do you want to delete your drawings?", message: "Save your progress if you want to!", preferredStyle: .alert)
@@ -455,27 +305,12 @@ class ViewController: UIViewController, PKToolPickerObserver, PKCanvasViewDelega
     }
     
     @objc func shareImage(sender: UIView) {
-        //performSegue(withIdentifier: <#T##String#>, sender: nil)
-//        let ac = UIAlertController(title: "Share", message: nil, preferredStyle: .actionSheet)
-//        let popOverVC = ac.popoverPresentationController
-//        popOverVC?.sourceView = view
-//        popOverVC?.sourceRect = CGRect(x: 32, y: 32, width: 64, height: 64)
-//        present(ac, animated: true)
-        //weird behaviour...closes the app and when I open it again it has the share ac title showing but it isn't interactable.
         
-        //ok so create an array which has the share title and things you want to show
         let description = "Share your drawing"
         let currentImage = UIImage(named: drawing.hero.imageName)!
         
         //the image new property uses a getter to find the value and return it...but its not showing maybe because its optional.
-        
-        //let drawingImage = canvasView.drawing.image(from: imageView.frame, scale: 1.0)
-        
-//        guard let currentImage1 = imageView.image?.pngData() else {
-//            print("No Image")
-//            return
-//        } //printing and not showing image.
-        
+
         let activityViewController : UIActivityViewController = UIActivityViewController(activityItems: [description, currentImage], applicationActivities: nil)
         //we can add further items here later in the array
         //Ok didn't notice this but adding current image brings up all the other options to share the image, like print, share, assign to contact etc.
@@ -496,18 +331,15 @@ class ViewController: UIViewController, PKToolPickerObserver, PKCanvasViewDelega
         
         //present the app modally.
         
-      //  activityViewController.isModalInPresentation = true
-        //activityViewController.popoverPresentationController?.sourceView = sender
-        
         activityViewController.popoverPresentationController?.barButtonItem = self.navigationItem.leftBarButtonItem
-        //Ok seemed to have fixed the app freezing andnow it presents a share button with copy and save to file functions.r
+        //Ok seemed to have fixed the app freezing andnow it presents a share button with copy and save to file functions.
         self.present(activityViewController, animated: true, completion: nil)
         
     
     }
     
     @objc func saveCurrentDrawing() {
-        
+        dataModelController.updateDrawing(canvasView.drawing, at: drawingIndex)
     }
     
     @objc func showSideMenu() {
@@ -516,22 +348,40 @@ class ViewController: UIViewController, PKToolPickerObserver, PKCanvasViewDelega
        // print("Button Pressed")
     }
     
+    
+    func changeCurrentDrawing(imageName: String) {
+        //let heroImageName = drawing.hero.rawValue
+        
+        let viewWidth = view.bounds.width
+        let viewHeight = view.bounds.height
+        let imageToAdd = UIImage(named: imageName)
+        let newImageView = UIImageView(image: imageToAdd)
+        imageView.frame = CGRect(x: 0, y: 0, width: viewWidth, height: viewHeight)
+        
+        
+        
+        view.addSubview(newImageView)
+        newImageView.anchors(top: view.topAnchor, bottom: view.bottomAnchor, trailing: view.trailingAnchor, leading: view.leadingAnchor)
+        
+        view.addSubview(canvasView) //putting this above the anchors stops the constraint fatal error. this view needs to be added to subview BEFORE anchoring it.
+       // view.bringSubviewToFront(canvasView)
+                canvasView.anchors(top: view.topAnchor, bottom: view.bottomAnchor, trailing: view.trailingAnchor, leading: view.leadingAnchor)
+    }
   
     
     @objc func changeDrawing(_ sender: UIButton) {
        //let drawings = [airplane, car, cat, hero, shinkansen]
         let ac = UIAlertController(title: "Change Picture", message: nil, preferredStyle: .actionSheet)
         ac.addAction(UIAlertAction(title: drawing.airplane.imageName, style: .default, handler: { _ in
-            //self.canvasView.addTraceImageToCanvasView(imageName: drawing.airplane.imageName)
-            //super.viewDidLoad()
-            //self.viewDidAppear(true)
-          //  self.view.didAddSubview(self.canvasView.self)
+            self.imageView.removeFromSuperview()
             
+            self.changeCurrentDrawing(imageName: drawing.airplane.imageName)
             
+            self.viewDidLoad()
             
         }))
         ac.addAction(UIAlertAction(title: drawing.car.imageName, style: .default, handler: { _ in
-            self.view.addSubview(self.imageView)
+           //self.view.addSubview(self.imageView)
         }))
         
         ac.popoverPresentationController?.barButtonItem = self.navigationItem.leftBarButtonItem  //caused NSException error because no popover vc declared here.
@@ -571,12 +421,6 @@ class ViewController: UIViewController, PKToolPickerObserver, PKCanvasViewDelega
     
 }
 
-//class Tool {
-//    static func getContentViewFromPKCanvasView(_ view: UIView) -> some UIView {
-//        view.subviews[0]
-//        //Instance member 'canvasView' cannot be used on type 'ViewController' should use a regular view
-//    }
-//}
 
 extension UIView {
    // we can create a function that handles the anchors and set this in the extension to UIView to handle all anchors. Super useful extension!
@@ -597,34 +441,6 @@ extension UIView {
 
         ])
     }
-    
-    func addTraceImageToCanvasView(imageName: String, contentMode: UIView.ContentMode = .scaleAspectFit) {
-        //.scaleAspectFit is keeping the original size of the image view. However one of its properties is Any remaining area of the view’s bounds is transparent. So its keeping the views (canvasView's) bounds empty.
-        
-//        let height = UIScreen.main.bounds.size.height
-//
-//        let width = UIScreen.main.bounds.size.width
-//
-//        let height = view.frame.size.height
-//        let width = view.frame.size.width
-        //let backgroundDimensions = UIImageView(frame: CGRect(x: 0, y: 0, width: width, height: height))
-        
-        let backgroundDimensions = UIImageView(frame: UIScreen.main.bounds)
-        backgroundDimensions.image = (UIImage(named: imageName)) //Cannot call value of non-function type 'UIImage?' should just be the param AND = THE IMAGE NAME!! You forgot the = sign!
-       // backgroundDimensions.translatesAutoresizingMaskIntoConstraints = false
-        backgroundDimensions.clipsToBounds = true
-        //backgroundDimensions.contentMode = contentMode
-       // backgroundDimensions.translatesAutoresizingMaskIntoConstraints = false
-        //backgroundDimensions.anchors(top: topAnchor, bottom: bottomAnchor, trailing: trailingAnchor, leading: leadingAnchor) causing crash as can't find the right view.
-        addSubview(backgroundDimensions)
-        sendSubviewToBack(backgroundDimensions)
-    }
-    
-//    func adjustImageForCanvasView(imageForAdjustment: UIImageView, name: String) -> CGRect {
-//        imageForAdjustment.image = (UIImage(named: name))
-//        let containerRatio = imageForAdjustment.frame.size.height/imageForAdjustment.frame.size.width
-//        let imageRatio = imageForAdjustment.
-//    }
     
     
 }
